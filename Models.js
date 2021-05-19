@@ -1,4 +1,11 @@
 const mongoose = require('mongoose');
+const express = require('express');
+const cors = require('cors');
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
 
 mongoose.connect('mongodb://localhost:27017/books', { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -51,26 +58,25 @@ function seedUsers() {
 
 function callUser (req,res){
 
-  UsersModel.find( function (err, User) {
+  UsersModel.find({email:'muhmadjradat@gmail.com'},'books', function (err, User) {
     if (err) return console.error(err);
     console.log(User);
-    res.send(User);
+    res.send(User[0].books);
   });
 
 }
 
-function newBook(req,res){
-  const {name , description, status , email}= req.body;
-
-  UsersModel.find({email:'muhmadjradat@gmail.com'},(err,data)=>{
-    data[0].books.push({
+function newBook(req, res) {
+  const { name, email, description } = req.body;
+  console.log(req.body);
+  UsersModel.find({ email:email}, (error, userData) => {
+    console.log(userData);
+    userData[0].books.push({
       name: name,
       description: description,
-      status: status,
     });
-    data[0].save();
-    res.send(data[0].books);
-    if (err) {res.send('Error');}
+    userData[0].save();
+    res.send(userData[0].books);
   });
 }
 
@@ -95,4 +101,26 @@ function deleteBook(req, res) {
   });
 }
 
-module.exports=callUser,newBook,deleteBook;
+function updateBook (req, res) {
+  const index = Number(req.params.index);
+  const {email, name, description, status} = req.body;
+  const updatedData = {
+    name: name,
+    description: description,
+    status: status
+  };
+  UsersModel.find({email: email}, (error, book) =>{
+
+    book[0].books.splice(index, 1, updatedData);
+    book[0].save();
+    res.send(book[0].books);
+  });
+}
+
+
+module.exports = {
+  callUser,
+  newBook,
+  deleteBook,
+  updateBook,
+};
